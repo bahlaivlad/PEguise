@@ -1,0 +1,15 @@
+# PEguise runtime dependencies.
+#
+# Requires Python 3.11 or newer (declared in pyproject.toml). All three are
+# pure-Python and work fully offline. PEguise makes no network calls; signify in
+# particular is used only as an ASN.1/PKCS#7 parser, never for chain validation,
+# revocation checking or timestamp verification.
+
+pefile>=2023.2.7      # PE parsing, resource directory, VERSIONINFO
+signify>=0.9.0        # pure-Python Authenticode / PKCS#7 parsing (no OpenSSL).
+                      # The signed_file.pe API PEguise imports appeared in 0.9.0;
+                      # an older release would silently disable every signature check.
+PyYAML>=6.0           # reference data files
+
+# Test harness only:
+pytest>=7.0

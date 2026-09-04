@@ -1,0 +1,402 @@
+# PEguise generic-tool identity database
+# ======================================
+# Self-identifying VERSIONINFO strings left behind by packers, SFX stubs,
+# installers and script compilers. These are NOT malicious by themselves --
+# they are extremely common in legitimate software. PEguise only scores them
+# when they coexist with a SPECIFIC big-vendor claim that they contradict
+# (e.g. CompanyName "Mozilla" + InternalName "7zS.sfx").
+#
+# HOW TO ADD AN ENTRY
+# -------------------
+# - id:                  stable machine key
+#   name:                human name shown in the report
+#   fields:              which VERSIONINFO fields the patterns are matched
+#                        against. Default: [InternalName, OriginalFilename].
+#                        Add ProductName / FileDescription / CompanyName when
+#                        the tool's fingerprint lives there instead.
+#   patterns:            Python regexes, case-insensitive, matched with
+#                        re.fullmatch against the whole field value. Use
+#                        '.*foo.*' when you need a substring match.
+#   benign_for_vendors:  vendor ids (from vendors.yaml) for which this identity
+#                        is LEGITIMATE and must never be scored. Example:
+#                        "Wextract" is Microsoft's own IExpress stub, so a
+#                        Microsoft claim plus Wextract is normal.
+#   note:                free text shown in the evidence output.
+#   section_names:       PE section names this tool leaves behind, matched
+#                        case-insensitively against the whole name after
+#                        trailing NULs are stripped. Max 8 characters -- longer
+#                        entries can never match, since that is the width of the
+#                        PE field. An entry may carry section_names, patterns,
+#                        or both; `patterns` may be empty when section_names is
+#                        present.
+#   category:            compressor | protector | other. Chooses the scoring
+#                        weight for a section-name match:
+#                          compressor -> UPX, ASPack, MPRESS and friends. Major
+#                              vendors essentially never ship these today, so a
+#                              vendor claim beside one is strong evidence.
+#                          protector  -> Themida, VMProtect, Enigma and friends.
+#                              These are LEGITIMATELY used by security vendors
+#                              and licensed software to resist tampering, so a
+#                              match is scored much lower and the report says so.
+#                        Only affects section-name scoring; VERSIONINFO pattern
+#                        matches always use the generic_tool_identity weight.
+#
+# NOT INCLUDED ON PURPOSE: installer section names (.ndata from NSIS, .wixburn
+# from WiX Burn). Firefox Setup is an NSIS installer -- a Mozilla claim beside
+# ".ndata" is entirely normal, and a survey of real PE files found legitimate
+# .wixburn binaries. Those names live in util.STANDARD_SECTION_NAMES instead,
+# and the integrity tests reject any attempt to add them here. The VERSIONINFO
+# entries below already catch the meaningful NSIS/WiX cases without the false
+# positives.
+#
+# Keep patterns tight. A pattern that matches ordinary filenames ("setup.exe")
+# will fire on huge numbers of benign installers -- prefer distinctive
+# self-identifying strings over generic ones.
+
+generic_tools:
+  - id: 7zip_sfx
+    name: 7-Zip self-extracting archive stub
+    fields: [InternalName, OriginalFilename]
+    patterns:
+      - '(?i)7zs\d*(d)?(con)?\.sfx'
+      - '(?i)7z(con)?\.sfx'
+      - '(?i)7zsfx.*'
+    benign_for_vendors: [7zip]
+    note: >-
+      Stock 7-Zip SFX module. The module identity is normally overwritten by the
+      packaging vendor; retaining it while claiming a major vendor is a mismatch.
+
+  - id: winrar_sfx
+    name: WinRAR self-extracting archive
+    fields: [InternalName, OriginalFilename, FileDescription, ProductName]
+    patterns:
+      - '(?i)winrar( sfx)?(\.exe)?'
+      - '(?i).*self[- ]extracting archive.*'
+      - '(?i)winrar self-extracting archive'
+      - '(?i)sfx.*module.*'
+    benign_for_vendors: [rarlab]
+    note: >-
+      WinRAR SFX stub identity. Legitimate on genuine RARLAB binaries; a
+      different vendor's claim wearing this identity is a mismatch.
+
+  - id: nsis
+    name: Nullsoft Scriptable Install System
+    fields: [InternalName, OriginalFilename, FileDescription, ProductName, CompanyName]
+    patterns:
+      - '(?i).*nullsoft install system.*'
+      - '(?i)au_\.exe'
+      - '(?i)nsis.*'
+    benign_for_vendors: []
+    note: >-
+      NSIS installer/uninstaller stub. Au_.exe is the NSIS uninstaller copy;
+      "Nullsoft Install System vX.YZ" commonly remains in ProductName.
+      Note: a bare "uninstall.exe" is deliberately NOT matched here -- far too
+      many vendors name their uninstaller that for it to identify NSIS.
+
+  - id: inno_setup
+    name: Inno Setup
+    fields: [InternalName, OriginalFilename, FileDescription, ProductName]
+    patterns:
+      - '(?i)unins\d{3}(\.exe)?'
+      - '(?i).*inno setup.*'
+      - '(?i)is-[0-9a-z]{5,8}\.tmp'
+      - '(?i)_iu\w*\.tmp'
+      - '(?i)setup/uninstall'
+    benign_for_vendors: []
+    note: Inno Setup installer or generated uninstaller (unins000.exe).
+
+  - id: installshield
+    name: InstallShield
+    fields: [InternalName, OriginalFilename, FileDescription, ProductName]
+    patterns:
+      - '(?i)_isdel(\.exe)?'
+      - '(?i).*installshield.*'
+      - '(?i)isbew64(\.exe)?'
+      - '(?i)setup\.exe \(installshield\)'
+    benign_for_vendors: []
+    note: InstallShield setup launcher or its uninstall helper.
+
+  - id: autoit
+    name: AutoIt compiled script
+    fields: [InternalName, OriginalFilename, FileDescription, ProductName, CompanyName]
+    patterns:
+      - '(?i)autoit3?(\.exe)?'
+      - '(?i).*autoit v3 script.*'
+      - '(?i)autoit team'
+      - '(?i)aut2exe.*'
+    benign_for_vendors: []
+    note: >-
+      Compiled AutoIt script stub. Very heavily abused by commodity loaders,
+      but also used by legitimate IT automation.
+
+  - id: iexpress
+    name: IExpress / Win32 Cabinet Self-Extractor
+    fields: [InternalName, OriginalFilename, FileDescription, ProductName]
+    patterns:
+      - '(?i)wextract(\.exe)?'
+      - '(?i).*win32 cabinet self-extractor.*'
+    benign_for_vendors: [microsoft]
+    note: >-
+      Microsoft IExpress stub. Legitimate on genuine Microsoft packages; a
+      non-Microsoft vendor claim on this stub is a mismatch.
+
+  - id: pyinstaller
+    name: PyInstaller bootloader
+    fields: [InternalName, OriginalFilename, FileDescription, ProductName]
+    patterns:
+      - '(?i)pyinstaller.*'
+      - '(?i)run(w)?\.exe'
+    benign_for_vendors: [python]
+    note: >-
+      PyInstaller frozen-Python bootloader. A bare "bootloader" string is
+      deliberately NOT matched -- it is a plausible product name in its own right.
+
+  - id: smart_install_maker
+    name: Smart Install Maker
+    fields: [InternalName, OriginalFilename, ProductName, FileDescription]
+    patterns:
+      - '(?i).*smart install maker.*'
+      - '(?i)sim\.exe'
+    benign_for_vendors: []
+    note: Smart Install Maker installer stub.
+
+  - id: advanced_installer
+    name: Advanced Installer
+    fields: [InternalName, OriginalFilename, ProductName, FileDescription]
+    patterns:
+      - '(?i).*advanced installer.*'
+      - '(?i)caphyon.*'
+    benign_for_vendors: []
+    note: Caphyon Advanced Installer bootstrapper.
+
+  - id: wix_burn
+    name: WiX Burn bundle
+    fields: [InternalName, OriginalFilename, ProductName, FileDescription]
+    patterns:
+      - '(?i)burn(\.exe)?'
+      - '(?i).*wix (toolset|burn).*'
+    benign_for_vendors: [microsoft]
+    note: WiX Toolset Burn bootstrapper.
+
+  - id: batch2exe
+    name: BAT-to-EXE / script wrapper
+    fields: [InternalName, OriginalFilename, ProductName, FileDescription]
+    patterns:
+      - '(?i).*bat( |_|-)?to( |_|-)?exe.*'
+      - '(?i).*quick batch file compiler.*'
+      - '(?i).*f2ko.*'
+    benign_for_vendors: []
+    note: Batch-file-to-executable converter stub.
+
+  - id: molebox_themida
+    name: Commercial protector stub
+    fields: [InternalName, OriginalFilename, ProductName, FileDescription, CompanyName]
+    patterns:
+      - '(?i).*molebox.*'
+      - '(?i).*themida.*'
+      - '(?i).*winlicense.*'
+      - '(?i).*enigma (virtual box|protector).*'
+      - '(?i).*vmprotect.*'
+    benign_for_vendors: []
+    note: Commercial protector/virtualizer stub identity left in VERSIONINFO.
+
+# ---------------------------------------------------------------------------
+# Section-name-only entries
+# ---------------------------------------------------------------------------
+# These tools leave no VERSIONINFO fingerprint -- they rewrite or discard it --
+# but they do name their sections distinctively. Every name below is one that
+# effectively never appears in a legitimately compiled binary; anything that
+# does appear in real toolchains lives in util.STANDARD_SECTION_NAMES and is
+# rejected here by the integrity tests.
+
+  # --- Compressors --------------------------------------------------------
+  # Runtime packers whose purpose is size reduction. Widely used by hobbyist
+  # and malicious software; essentially absent from major vendors' shipping
+  # builds today, largely because they trip antivirus heuristics.
+
+  - id: upx
+    name: UPX
+    category: compressor
+    patterns: []
+    section_names: [UPX0, UPX1, UPX2, .UPX0, .UPX1, .UPX2]
+    benign_for_vendors: []
+    note: >-
+      Ultimate Packer for eXecutables. Both the bare and dot-prefixed section
+      spellings occur in the wild; the dot-prefixed form is often a sign the
+      names were rewritten to evade naive signatures.
+
+  - id: aspack
+    name: ASPack
+    category: compressor
+    patterns: []
+    section_names: [.aspack, .adata]
+    benign_for_vendors: []
+    note: ASPack compressor. ".adata" is also produced by Armadillo.
+
+  - id: mpress
+    name: MPRESS
+    category: compressor
+    patterns: []
+    section_names: [.MPRESS1, .MPRESS2]
+    benign_for_vendors: []
+    note: MPRESS compressor.
+
+  - id: nspack
+    name: NsPack
+    category: compressor
+    patterns: []
+    section_names: [.nsp0, .nsp1, .nsp2, nsp0, nsp1, nsp2]
+    benign_for_vendors: []
+    note: NsPack compressor.
+
+  - id: pecompact
+    name: PECompact / PEBundle
+    category: compressor
+    patterns: []
+    section_names: [pec1, pec2, pebundle]
+    benign_for_vendors: []
+    note: Bitsum PECompact, and the related PEBundle.
+
+  - id: petite
+    name: Petite
+    category: compressor
+    patterns: []
+    section_names: [.petite]
+    benign_for_vendors: []
+    note: Petite compressor.
+
+  - id: upack
+    name: Upack
+    category: compressor
+    patterns: []
+    section_names: [.Upack, .ByDwing]
+    benign_for_vendors: []
+    note: Upack (Dwing) compressor.
+
+  - id: neolite
+    name: NeoLite
+    category: compressor
+    patterns: []
+    section_names: [.neolite, .neolit]
+    benign_for_vendors: []
+    note: NeoLite compressor.
+
+  - id: wwpack
+    name: WWPack32
+    category: compressor
+    patterns: []
+    section_names: [.WWP32, .WWPACK]
+    benign_for_vendors: []
+    note: WWPack32 compressor.
+
+  - id: kkrunchy
+    name: kkrunchy
+    category: compressor
+    patterns: []
+    section_names: [kkrunchy]
+    benign_for_vendors: []
+    note: kkrunchy, a very small-output compressor from the demoscene.
+
+  - id: shrinker
+    name: Shrinker
+    category: compressor
+    patterns: []
+    section_names: [.shrink1, .shrink2, .shrink3]
+    benign_for_vendors: []
+    note: Shrinker compressor.
+
+  - id: pepack
+    name: PEPack
+    category: compressor
+    patterns: []
+    section_names: ["PEPACK!!"]
+    benign_for_vendors: []
+    note: PEPack compressor.
+
+  # --- Commercial protectors ----------------------------------------------
+  # Anti-tamper and anti-analysis products. Unlike the compressors above, these
+  # have a REAL legitimate user base: security vendors protect their own agents
+  # with them, and licensed commercial software uses them for DRM. Scored at the
+  # lower `protector` weight for exactly that reason. If your own corpus shows a
+  # specific vendor legitimately ships one of these, add that vendor id to the
+  # entry's benign_for_vendors rather than lowering the weight globally.
+
+  - id: themida
+    name: Themida / WinLicense
+    category: protector
+    patterns: []
+    section_names: [.themida, .winlice]
+    benign_for_vendors: []
+    note: Oreans Themida / WinLicense protector.
+
+  - id: vmprotect
+    name: VMProtect
+    category: protector
+    patterns: []
+    section_names: [.vmp0, .vmp1, .vmp2]
+    benign_for_vendors: []
+    note: VMProtect virtualizing protector.
+
+  - id: enigma_protector
+    name: Enigma Protector
+    category: protector
+    patterns: []
+    section_names: [.enigma1, .enigma2]
+    benign_for_vendors: []
+    note: The Enigma Protector.
+
+  - id: asprotect
+    name: ASProtect
+    category: protector
+    patterns: []
+    section_names: [.aspr]
+    benign_for_vendors: []
+    note: ASProtect, from the makers of ASPack.
+
+  - id: svkp
+    name: SVK Protector
+    category: protector
+    patterns: []
+    section_names: [.svkp]
+    benign_for_vendors: []
+    note: SVK Protector.
+
+  - id: telock
+    name: tElock
+    category: protector
+    patterns: []
+    section_names: [.tElock]
+    benign_for_vendors: []
+    note: tElock protector.
+
+  - id: yoda_crypter
+    name: Y0da Crypter
+    category: protector
+    patterns: []
+    section_names: [.yP, .y0da]
+    benign_for_vendors: []
+    note: Y0da Crypter / Y0da Protector.
+
+  - id: perplex
+    name: Perplex PE Protector
+    category: protector
+    patterns: []
+    section_names: [.perplex]
+    benign_for_vendors: []
+    note: Perplex PE Protector.
+
+  - id: starforce
+    name: StarForce
+    category: protector
+    patterns: []
+    section_names: [.sforce3]
+    benign_for_vendors: []
+    note: StarForce copy protection, historically shipped on retail games.
+
+  - id: dragon_armor
+    name: Dragon Armor
+    category: protector
+    patterns: []
+    section_names: [DAStub]
+    benign_for_vendors: []
+    note: Dragon Armor protector.

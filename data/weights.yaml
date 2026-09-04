@@ -1,0 +1,108 @@
+# PEguise scoring configuration
+# =============================
+# All tunable numbers live here. scoring.py contains no hardcoded weights or
+# thresholds -- change behaviour by editing this file, or point --config at a
+# copy of it. Every check listed under `weights` is required: a missing or
+# misspelled key is rejected at load time rather than silently disabling the
+# check.
+
+# ---------------------------------------------------------------------------
+# Fuzzy-matching thresholds (0.0 - 1.0, difflib ratio on normalized strings)
+# ---------------------------------------------------------------------------
+matching:
+  # How close a CompanyName/ProductName must be to a vendor alias before we say
+  # "this file claims to be that vendor". Raise to reduce false vendor claims.
+  vendor_claim_threshold: 0.86
+  # How close a signer certificate CN must be to the claimed vendor before we
+  # accept it as the same entity. Deliberately lower than the claim threshold:
+  # signing entities are often subsidiaries ("Mozilla" vs "Mozilla Corporation").
+  # Substring / token-containment matching runs first and short-circuits this.
+  signer_cn_threshold: 0.72
+  # Minimum normalized token length considered meaningful for containment
+  # matching, to stop two-letter tokens matching everything.
+  min_token_length: 3
+  # How many independent oddities a section name must show before it counts as
+  # anomalous. Raising this makes the heuristic stricter; 1 is far too noisy,
+  # because "matches no known section name" alone fires on every novel-but-
+  # legitimate name.
+  section_anomaly_min_features: 2
+
+# ---------------------------------------------------------------------------
+# Check weights. Score is the sum of fired weights, capped at score_cap.
+# ---------------------------------------------------------------------------
+weights:
+  # Signature does not match the file it is attached to. Near-independent
+  # verdict: on its own this exceeds the "high" band.
+  authenticode_digest_mismatch: 75
+
+  # A specific big-vendor claim coexists with a packer/SFX self-identity.
+  generic_tool_identity: 50
+
+  # Signature is present but the signer CN is not plausibly the claimed vendor.
+  signer_cn_mismatch: 40
+
+  # Signer CN is close to the vendor name but is not that entity, and was only
+  # accepted by the fuzzy pass -- the shape of a typosquatted signing identity.
+  # Mutually exclusive with signer_cn_mismatch: at most one of the two fires.
+  signer_cn_near_miss: 40
+
+  # Vendor claimed, no signature at all, and that vendor almost always signs.
+  unsigned_but_vendor_signs: 20
+
+  # Vendor claimed and the file carries a packer's stock default icon.
+  default_packer_icon: 20
+
+  # Vendor claimed and a PE section name belongs to a runtime COMPRESSOR (UPX,
+  # ASPack, MPRESS...). Major vendors do not ship compressed binaries.
+  # Section names survive memory dumping, so this evidence stays valid on
+  # sandbox-dumped samples where the signature checks cannot be trusted.
+  packer_section_compressor: 30
+
+  # Same, for a commercial PROTECTOR (Themida, VMProtect, Enigma...). Weighted
+  # far lower on purpose: security vendors and licensed software legitimately
+  # use these to resist tampering, so a match must stay visible in the report
+  # without being able to drive a band on its own.
+  packer_section_protector: 15
+
+  # Vendor claimed and the section table is structurally implausible -- random
+  # or non-printable section names. Heuristic, and weighted so it can never
+  # reach a band by itself. See util.section_name_anomalies for the features.
+  anomalous_section_names: 10
+
+  # Vendor claimed, but InternalName/OriginalFilename match no known product
+  # pattern for that vendor. Two tiers, chosen by the vendor's
+  # internal_name_check setting in vendors.yaml.
+  internal_name_mismatch_strict: 15
+  internal_name_mismatch_lenient: 5
+
+  # LegalCopyright does not mention the claimed vendor at all.
+  copyright_vendor_mismatch: 5
+
+  # Vendor claimed but the VERSIONINFO carries no InternalName AND no
+  # OriginalFilename. Weak on its own; real vendor binaries almost always set
+  # at least one.
+  vendor_claim_without_names: 5
+
+# ---------------------------------------------------------------------------
+# Severity labels attached to each finding in the report, by weight.
+# ---------------------------------------------------------------------------
+# A finding whose weight reaches a threshold gets that label; below "medium" it
+# is "low". Informational only -- labels never affect the score or the band.
+severity_thresholds:
+  critical: 50
+  high: 30
+  medium: 15
+
+# ---------------------------------------------------------------------------
+# Score bands used for the human-readable label.
+# ---------------------------------------------------------------------------
+score_cap: 100
+bands:
+  # (lower_bound_inclusive, label). Calibrated so that the canonical
+  # impersonation pattern -- big-vendor claim + packer self-identity + unsigned
+  # when that vendor always signs -- lands in "high", and so that an
+  # Authenticode digest mismatch reaches "high" entirely on its own.
+  - [0, low]
+  - [20, moderate]
+  - [40, elevated]
+  - [70, high]

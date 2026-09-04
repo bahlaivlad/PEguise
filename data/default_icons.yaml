@@ -1,0 +1,50 @@
+# PEguise default-icon fingerprint database
+# =========================================
+# SHA-256 hashes of the RAW RT_ICON resource bytes (the DIB / PNG blob exactly
+# as stored in the PE, with no header rewriting) for the STOCK default icons
+# shipped with common packers, SFX stubs and installer builders.
+#
+# WHY THIS SHIPS EMPTY
+# --------------------
+# There are no universally correct hashes to bundle: the default icon changes
+# between tool versions (7-Zip 9.x vs 19.x vs 24.x SFX modules all differ), and
+# a hash copied from an untrusted source is worse than no hash at all -- it
+# produces a check that looks authoritative but silently never matches, or
+# matches the wrong thing. So PEguise ships the SCHEMA and a populator tool and
+# asks you to generate hashes from stubs you obtain yourself.
+#
+# HOW TO POPULATE
+# ---------------
+#   1. Obtain the stock stub from the vendor. Examples:
+#        7zS.sfx / 7zSD.sfx  -> 7-Zip "extra" package (7z*-extra.7z)
+#        Default.SFX         -> WinRAR installation directory
+#        makensis output     -> build an NSIS installer with no custom icon
+#        Inno Setup          -> compile a script with no SetupIconFile
+#   2. Run:  python tools/hash_icons.py <stub.exe> --id 7zip_sfx_default \
+#              --name "7-Zip SFX default icon" --tool 7zip_sfx
+#      It prints a ready-to-paste YAML block with every RT_ICON hash in the file.
+#   3. Paste the block under `default_icons:` below.
+#
+# FIELD REFERENCE
+#   id:        stable machine key
+#   name:      human name shown in the report
+#   tool:      id from packer_identities.yaml this icon belongs to (optional,
+#              used only to enrich the evidence text)
+#   sha256:    list of RT_ICON raw-bytes hashes. One stub usually contains
+#              several sizes/depths; list them all -- a match on ANY one counts.
+#   note:      free text, e.g. which tool version it was taken from
+#
+# With this list empty the icon check reports status "no_reference_data" and
+# contributes zero to the score. That is intentional and non-fatal.
+
+default_icons: []
+
+# Example of a populated entry (commented out -- these are NOT real hashes):
+#
+# default_icons:
+#   - id: 7zip_sfx_default
+#     name: 7-Zip SFX default icon
+#     tool: 7zip_sfx
+#     note: extracted from 7zSD.sfx, 7-Zip 24.08 extra package
+#     sha256:
+#       - 0000000000000000000000000000000000000000000000000000000000000000

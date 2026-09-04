@@ -1,0 +1,819 @@
+# PEguise vendor reference database
+# =================================
+# Curated list of vendors whose identity is commonly impersonated in a PE's
+# VERSIONINFO resource. This file is DATA, not code -- edit it freely.
+#
+# HOW TO ADD A VENDOR
+# -------------------
+# - id:                    stable machine key (lowercase, no spaces)
+#   display_name:          human name used in reports
+#   aliases:               every spelling seen in real CompanyName/ProductName
+#                          fields, including trademark noise ("Microsoft(R)"),
+#                          legal suffixes, and localized forms. Matching is
+#                          normalized + fuzzy, so you do NOT need every case
+#                          variant -- add distinct *wordings*.
+#   product_names:         product brand names that, when they appear in
+#                          ProductName, constitute a claim to be this vendor
+#                          (ProductName "Firefox" is a Mozilla claim even though
+#                          "Firefox" is not a spelling of "Mozilla"). Matched
+#                          only against ProductName, never CompanyName.
+#   product_patterns:      Python regexes (case-insensitive, fullmatch) that a
+#                          GENUINE binary of this vendor could plausibly have as
+#                          InternalName or OriginalFilename. Include the ".exe"
+#                          / ".dll" suffix as optional where relevant.
+#   internal_name_check:   strict | lenient
+#                          strict  -> this vendor ships a small, enumerable set
+#                                     of binaries; a name outside product_patterns
+#                                     is real evidence.
+#                          lenient -> this vendor ships thousands of binaries
+#                                     (Microsoft, Google); a name outside
+#                                     product_patterns is weak evidence only.
+#                          When in doubt use "lenient": it scores lower and
+#                          therefore produces fewer false positives.
+#   almost_always_signed:  true if this vendor Authenticode-signs essentially
+#                          every shipped binary. An UNSIGNED file claiming such a
+#                          vendor is suspicious. Set false for vendors that ship
+#                          unsigned helper binaries.
+#   signer_cn_substrings:  lowercase substrings that legitimately appear in the
+#                          Subject CN of this vendor's code-signing certificates.
+#                          Used to avoid false positives when the signing entity
+#                          is a subsidiary or legal entity whose name differs
+#                          from CompanyName (e.g. CompanyName "Mozilla" signed by
+#                          "Mozilla Corporation").
+#   copyright_tokens:      lowercase tokens expected in LegalCopyright. Optional.
+#
+# Nothing here is authoritative about a vendor's real catalogue -- it is triage
+# heuristics. Keep product_patterns generous; a missing pattern costs a false
+# positive, an extra pattern costs only a missed weak signal.
+
+vendors:
+  - id: microsoft
+    display_name: Microsoft
+    aliases:
+      - Microsoft
+      - Microsoft Corporation
+      - Microsoft Corp
+      - "Microsoft(R) Corporation"
+      - "Microsoft® Corporation"
+      - Microsoft Windows
+      - "Microsoft® Windows®"
+      - Microsoft Windows Operating System
+      - Microsoft Office
+    product_names:
+      - "Windows"
+      - "Microsoft Windows Operating System"
+      - "Microsoft Office"
+      - "Microsoft Edge"
+      - "Microsoft Visual Studio"
+      - "Microsoft Defender"
+      - "Microsoft Teams"
+      - "OneDrive"
+      - "Skype"
+    internal_name_check: lenient
+    almost_always_signed: true
+    signer_cn_substrings:
+      - microsoft
+    copyright_tokens:
+      - microsoft
+    product_patterns:
+      - '(?i)(svchost|explorer|notepad|calc|cmd|conhost|dllhost|rundll32|regsvr32)(\.exe)?'
+      - '(?i)(powershell|pwsh|wscript|cscript|mshta|msiexec|wusa|wextract|taskmgr)(\.exe)?'
+      - '(?i)(winlogon|lsass|services|wininit|csrss|smss|spoolsv|ctfmon|sihost)(\.exe)?'
+      - '(?i)(msedge|iexplore|teams|onedrive|onedrivesetup|skype|msteams)(\.exe)?'
+      - '(?i)(winword|excel|powerpnt|outlook|onenote|msaccess|mspub|visio|winproj)(\.exe)?'
+      - '(?i)(vsjitdebugger|devenv|msbuild|dotnet|mscorsvw|ngen)(\.exe)?'
+      - '(?i)(defender|msmpeng|mpcmdrun|nissrv|securityhealth\w*)(\.exe)?'
+      - '(?i)\w+\.(dll|sys|mui|cpl|efi)'
+      - '(?i)(microsoft|windows|ms)[-. _]?\w*(\.exe)?'
+
+  - id: mozilla
+    display_name: Mozilla
+    aliases:
+      - Mozilla
+      - Mozilla Corporation
+      - Mozilla Foundation
+      - "Mozilla Corp."
+    product_names:
+      - "Firefox"
+      - "Mozilla Firefox"
+      - "Thunderbird"
+      - "Mozilla Thunderbird"
+      - "SeaMonkey"
+    internal_name_check: strict
+    almost_always_signed: true
+    signer_cn_substrings:
+      - mozilla
+    copyright_tokens:
+      - mozilla
+    product_patterns:
+      - '(?i)(firefox|firefox\.exe|firefox setup.*|firefoxinstaller.*)'
+      - '(?i)(thunderbird|thunderbird\.exe|thunderbird setup.*)'
+      - '(?i)(seamonkey|maintenanceservice|updater|pingsender|crashreporter|minidump-analyzer)(\.exe)?'
+      - '(?i)(default-browser-agent|notificationserver|plugin-container)(\.exe)?'
+      - '(?i)(xul|mozglue|nss3|nssckbi|softokn3|freebl3|lgpllibs|ipcclientcerts|osclientcerts)\.dll'
+
+  - id: google
+    display_name: Google
+    aliases:
+      - Google
+      - Google LLC
+      - Google Inc.
+      - Google Inc
+      - "Google, Inc."
+      - The Chromium Authors
+    product_names:
+      - "Google Chrome"
+      - "Chrome"
+      - "Chromium"
+      - "Google Update"
+      - "Google Drive"
+      - "Google Earth"
+    internal_name_check: lenient
+    almost_always_signed: true
+    signer_cn_substrings:
+      - google
+    copyright_tokens:
+      - google
+      - chromium
+    product_patterns:
+      - '(?i)(chrome|chrome\.exe|chrome_pwa_launcher|chrome_proxy|chromedriver)(\.exe)?'
+      - '(?i)(googleupdate|googlecrashhandler\w*|googleupdatesetup|setup)(\.exe)?'
+      - '(?i)(googledrivefs|drivefs|googledrivesync|backupandsync)(\.exe)?'
+      - '(?i)(chrome_elf|chrome_child|libglesv2|libegl|d3dcompiler_\d+)\.dll'
+
+  - id: adobe
+    display_name: Adobe
+    aliases:
+      - Adobe
+      - Adobe Inc.
+      - Adobe Systems
+      - Adobe Systems Incorporated
+      - "Adobe Systems, Incorporated"
+    product_names:
+      - "Adobe Acrobat"
+      - "Adobe Acrobat Reader"
+      - "Adobe Reader"
+      - "Adobe Photoshop"
+      - "Adobe Creative Cloud"
+      - "Adobe Flash Player"
+      - "Adobe AIR"
+    internal_name_check: strict
+    almost_always_signed: true
+    signer_cn_substrings:
+      - adobe
+    copyright_tokens:
+      - adobe
+    product_patterns:
+      - '(?i)(acrord32|acrord64|acrobat|acrotray|acrocef|acrord32info|readerdc\w*)(\.exe)?'
+      - '(?i)(photoshop|illustrator|indesign|premiere\w*|aftereffects|animate|lightroom\w*)(\.exe)?'
+      - '(?i)(adobe\w*|creative cloud\w*|ccxprocess|coresync|adobeipcbroker|adobeupdateservice)(\.exe)?'
+      - '(?i)(flashplayer\w*|flashutil\w*|airappinstaller)(\.exe)?'
+
+  - id: oracle
+    display_name: Oracle
+    aliases:
+      - Oracle
+      - Oracle Corporation
+      - "Oracle America, Inc."
+      - Sun Microsystems
+      - "Sun Microsystems, Inc."
+    product_names:
+      - "Java"
+      - "Java Platform SE"
+      - "Java(TM) Platform SE"
+      - "Java SE Runtime Environment"
+      - "Oracle VM VirtualBox"
+      - "VirtualBox"
+    internal_name_check: strict
+    almost_always_signed: true
+    signer_cn_substrings:
+      - oracle
+      - sun microsystems
+    copyright_tokens:
+      - oracle
+      - sun microsystems
+    product_patterns:
+      - '(?i)(java|javaw|javaws|jabswitch|jaccessinspector|jaccesswalker|jp2launcher)(\.exe)?'
+      - '(?i)(jre|jdk|jvm|javacpl|ssvagent|jusched|jucheck|jauto\w*)(\.exe)?'
+      - '(?i)(virtualbox|vboxsvc|vboxheadless|vboxmanage|vboxtray|vboxservice)(\.exe)?'
+      - '(?i)(sqlplus|tnsping|oracle\w*)(\.exe)?'
+
+  - id: apple
+    display_name: Apple
+    aliases:
+      - Apple
+      - Apple Inc.
+      - Apple Inc
+      - "Apple Computer, Inc."
+    product_names:
+      - "iTunes"
+      - "iCloud"
+      - "QuickTime"
+      - "Bonjour"
+      - "Safari"
+      - "Apple Application Support"
+    internal_name_check: strict
+    almost_always_signed: true
+    signer_cn_substrings:
+      - apple
+    copyright_tokens:
+      - apple
+    product_patterns:
+      - '(?i)(itunes|icloud\w*|applemobiledeviceservice|appleimagecapture|bonjour|mdnsresponder)(\.exe)?'
+      - '(?i)(quicktime\w*|safari|appledeviceservice|applesoftwareupdate|softwareupdate)(\.exe)?'
+
+  - id: intel
+    display_name: Intel
+    aliases:
+      - Intel
+      - Intel Corporation
+      - "Intel(R) Corporation"
+    product_names:
+      - "Intel Graphics"
+      - "Intel Driver & Support Assistant"
+      - "Intel Management Engine"
+    internal_name_check: lenient
+    almost_always_signed: true
+    signer_cn_substrings:
+      - intel
+    copyright_tokens:
+      - intel
+    product_patterns:
+      - '(?i)(igfx\w*|intel\w*|dptf\w*|esrv\w*|dsatray|dsaservice|iastor\w*|hdaudio\w*)(\.exe|\.dll|\.sys)?'
+
+  - id: nvidia
+    display_name: NVIDIA
+    aliases:
+      - NVIDIA
+      - NVIDIA Corporation
+    product_names:
+      - "NVIDIA GeForce Experience"
+      - "GeForce Experience"
+      - "NVIDIA Display Driver"
+      - "NVIDIA Control Panel"
+    internal_name_check: lenient
+    almost_always_signed: true
+    signer_cn_substrings:
+      - nvidia
+    copyright_tokens:
+      - nvidia
+    product_patterns:
+      - '(?i)(nv\w*|nvidia\w*|geforce\w*|nvcontainer|nvdisplay\w*|nvtelemetry\w*)(\.exe|\.dll|\.sys)?'
+
+  - id: vmware
+    display_name: VMware
+    aliases:
+      - VMware
+      - "VMware, Inc."
+      - VMware Inc
+    product_names:
+      - "VMware Workstation"
+      - "VMware Player"
+      - "VMware Tools"
+      - "VMware Horizon"
+    internal_name_check: strict
+    almost_always_signed: true
+    signer_cn_substrings:
+      - vmware
+    copyright_tokens:
+      - vmware
+    product_patterns:
+      - '(?i)(vmware\w*|vmplayer|vmnat|vmnetdhcp|vmtoolsd|vm3dservice|vmauthdservice)(\.exe)?'
+
+  - id: dropbox
+    display_name: Dropbox
+    aliases:
+      - Dropbox
+      - "Dropbox, Inc."
+      - Dropbox Inc
+    product_names:
+      - "Dropbox"
+      - "Dropbox Update"
+    internal_name_check: strict
+    almost_always_signed: true
+    signer_cn_substrings:
+      - dropbox
+    copyright_tokens:
+      - dropbox
+    product_patterns:
+      - '(?i)(dropbox\w*|dropboxupdate|dropboxcrashhandler\d*|dropboxext\w*)(\.exe|\.dll)?'
+
+  - id: notepadplusplus
+    display_name: Notepad++
+    aliases:
+      - Notepad++
+      - "Notepad++ Team"
+      - "Don HO"
+    product_names:
+      - "Notepad++"
+    internal_name_check: strict
+    # Notepad++ has shipped both signed and unsigned builds historically.
+    almost_always_signed: false
+    signer_cn_substrings:
+      - notepad++
+      - "don ho"
+    copyright_tokens:
+      - "notepad++"
+    product_patterns:
+      - '(?i)(notepad\+\+|notepad__|nppshell\w*|gup|npp\w*)(\.exe|\.dll)?'
+
+  - id: 7zip
+    display_name: 7-Zip
+    aliases:
+      - 7-Zip
+      - 7zip
+      - Igor Pavlov
+    product_names:
+      - "7-Zip"
+      - "7-Zip Console"
+      - "7-Zip File Manager"
+    internal_name_check: strict
+    # 7-Zip official releases are frequently NOT Authenticode signed.
+    almost_always_signed: false
+    signer_cn_substrings:
+      - igor pavlov
+    copyright_tokens:
+      - "igor pavlov"
+    product_patterns:
+      - '(?i)(7z|7zg|7zfm|7za|7zr|7zcon|7zs\d*(d)?\.sfx|7z\.sfx|7-zip\w*)(\.exe|\.dll)?'
+
+  # --- Hardware / driver vendors -----------------------------------------
+  # Driver and firmware vendors are heavily impersonated because their
+  # binaries are expected to be unfamiliar to users and to sit in odd paths.
+
+  - id: realtek
+    display_name: Realtek
+    aliases:
+      - Realtek
+      - Realtek Semiconductor
+      - "Realtek Semiconductor Corp."
+      - Realtek Semiconductor Corp
+    product_names:
+      - Realtek High Definition Audio Driver
+      - Realtek Audio Console
+      - Realtek Ethernet Controller Driver
+      - Realtek Card Reader
+    internal_name_check: lenient
+    almost_always_signed: true
+    signer_cn_substrings:
+      - realtek
+    copyright_tokens:
+      - realtek
+    product_patterns:
+      - '(?i)(rtkaudioservice\d*|rtkngui\d*|ravcpl\d*|rtkauduservice\d*|rtlupd\d*)(\.exe)?'
+      - '(?i)(rtk\w*|rav\w*|rtl\w*|realtek\w*)(\.exe|\.dll|\.sys)?'
+      - '(?i)(rtkvhd\d*|rtkhdaud|rtux\w*|rt\w+)\.sys'
+
+  - id: amd
+    display_name: AMD
+    aliases:
+      - AMD
+      - Advanced Micro Devices
+      - "Advanced Micro Devices, Inc."
+      - ATI Technologies
+      - "ATI Technologies Inc."
+    product_names:
+      - AMD Radeon Software
+      - Radeon Software
+      - AMD Catalyst Control Center
+      - AMD Ryzen Master
+    internal_name_check: lenient
+    almost_always_signed: true
+    signer_cn_substrings:
+      - advanced micro devices
+      - ati technologies
+      - amd
+    copyright_tokens:
+      - advanced micro devices
+      - ati technologies
+    product_patterns:
+      - '(?i)(radeonsoftware|amdrsserv|amdrssrcext|cnext|amdow|amdfendr\w*)(\.exe)?'
+      - '(?i)(atieclxx|atiesrxx|atiedxx|amddvr\w*|amdlogmanager)(\.exe)?'
+      - '(?i)(amd\w*|ati\w*|radeon\w*)(\.exe|\.dll|\.sys)?'
+
+  - id: logitech
+    display_name: Logitech
+    aliases:
+      - Logitech
+      - Logitech Inc.
+      - "Logitech Europe S.A."
+      - Logi
+    product_names:
+      - Logitech Options
+      - Logitech G HUB
+      - Logitech SetPoint
+      - Logitech Gaming Software
+    internal_name_check: strict
+    almost_always_signed: true
+    signer_cn_substrings:
+      - logitech
+    copyright_tokens:
+      - logitech
+    product_patterns:
+      - '(?i)(logioptions\w*|lghub\w*|lghub|setpoint|logioverlay|logivoicetyping)(\.exe)?'
+      - '(?i)(logi\w*|logitech\w*|lcore|lghub_\w+)(\.exe|\.dll)?'
+
+  # --- Remote access / collaboration --------------------------------------
+  # Remote-access tooling is both a common impersonation target and a common
+  # dual-use payload, so an impersonation claim here is worth extra attention.
+
+  - id: teamviewer
+    display_name: TeamViewer
+    aliases:
+      - TeamViewer
+      - TeamViewer GmbH
+      - TeamViewer Germany GmbH
+      - TeamViewer AG
+      - "TeamViewer SE"
+    product_names:
+      - TeamViewer
+      - TeamViewer Remote
+    internal_name_check: strict
+    almost_always_signed: true
+    signer_cn_substrings:
+      - teamviewer
+    copyright_tokens:
+      - teamviewer
+    product_patterns:
+      - '(?i)teamviewer\w*(\.exe|\.dll)?'
+      - '(?i)(tv_w32|tv_x64|tvnetwork|tvfiles|tvhelper)(\.exe|\.dll)?'
+
+  - id: anydesk
+    display_name: AnyDesk
+    aliases:
+      - AnyDesk
+      - AnyDesk Software GmbH
+      - philandro Software GmbH
+    product_names:
+      - AnyDesk
+    internal_name_check: strict
+    almost_always_signed: true
+    signer_cn_substrings:
+      - anydesk
+      - philandro
+    copyright_tokens:
+      - anydesk
+      - philandro
+    product_patterns:
+      - '(?i)anydesk\w*(\.exe|\.dll)?'
+      - '(?i)ad_\w+(\.exe)?'
+
+  - id: zoom
+    display_name: Zoom
+    aliases:
+      - Zoom
+      - Zoom Video Communications
+      - "Zoom Video Communications, Inc."
+      - "Zoom Communications, Inc."
+    product_names:
+      - Zoom
+      - Zoom Meetings
+      - Zoom Workplace
+    internal_name_check: strict
+    almost_always_signed: true
+    signer_cn_substrings:
+      - zoom video communications
+      - zoom communications
+    copyright_tokens:
+      - zoom
+    product_patterns:
+      - '(?i)(zoom|zoom_launcher|zoominstaller\w*|zoomit|zoomoutlookplugin)(\.exe)?'
+      - '(?i)(cpthost|airhost|zcrashreport\d*|zupdater|installer)(\.exe)?'
+      - '(?i)zoom\w*(\.exe|\.dll)?'
+
+  - id: cisco
+    display_name: Cisco
+    aliases:
+      - Cisco
+      - Cisco Systems
+      - "Cisco Systems, Inc."
+      - Cisco WebEx LLC
+      - Webex by Cisco
+    product_names:
+      - Cisco AnyConnect Secure Mobility Client
+      - Cisco Secure Client
+      - Cisco Webex Meetings
+      - Webex
+    internal_name_check: lenient
+    almost_always_signed: true
+    signer_cn_substrings:
+      - cisco
+    copyright_tokens:
+      - cisco
+    product_patterns:
+      - '(?i)(vpnagent|vpnui|vpndownloader|csc_ui|acwebsecagent|aciseposture)(\.exe)?'
+      - '(?i)(atmgr|ptservice|webexmta|ciscocollabhost|ciscowebexstart|ciscojabber)(\.exe)?'
+      - '(?i)(cisco|webex)\w*(\.exe|\.dll)?'
+
+  - id: citrix
+    display_name: Citrix
+    aliases:
+      - Citrix
+      - Citrix Systems
+      - "Citrix Systems, Inc."
+    product_names:
+      - Citrix Workspace
+      - Citrix Receiver
+      - Citrix Virtual Apps and Desktops
+    internal_name_check: lenient
+    almost_always_signed: true
+    signer_cn_substrings:
+      - citrix
+    copyright_tokens:
+      - citrix
+    product_patterns:
+      - '(?i)(wfica32|wfcrun32|cdviewer|selfservice|selfserviceplugin|concentr|redirector)(\.exe)?'
+      - '(?i)citrix\w*(\.exe|\.dll)?'
+
+  # --- Consumer messaging / media ----------------------------------------
+
+  - id: slack
+    display_name: Slack
+    aliases:
+      - Slack
+      - Slack Technologies
+      - "Slack Technologies, Inc."
+      - "Slack Technologies, LLC"
+    product_names:
+      - Slack
+    internal_name_check: strict
+    almost_always_signed: true
+    signer_cn_substrings:
+      - slack technologies
+      - salesforce
+    copyright_tokens:
+      - slack
+      - salesforce
+    product_patterns:
+      - '(?i)(slack|slacksetup|slack_\w+)(\.exe)?'
+      - '(?i)(update|squirrel)(\.exe)?'
+
+  - id: discord
+    display_name: Discord
+    aliases:
+      - Discord
+      - Discord Inc.
+      - Discord Inc
+    product_names:
+      - Discord
+    internal_name_check: strict
+    almost_always_signed: true
+    signer_cn_substrings:
+      - discord
+    copyright_tokens:
+      - discord
+    product_patterns:
+      - '(?i)(discord|discordcanary|discordptb|discorddevelopment|discordsetup)(\.exe)?'
+      - '(?i)(update|squirrel)(\.exe)?'
+
+  - id: telegram
+    display_name: Telegram
+    aliases:
+      - Telegram
+      - Telegram Messenger
+      - Telegram FZ-LLC
+      - "Telegram Messenger LLP"
+      - "Telegram Messenger Inc."
+    product_names:
+      - Telegram Desktop
+      - Telegram
+    internal_name_check: strict
+    almost_always_signed: true
+    signer_cn_substrings:
+      - telegram
+    copyright_tokens:
+      - telegram
+    product_patterns:
+      - '(?i)(telegram|telegram desktop|telegramdesktop)(\.exe)?'
+      - '(?i)(updater|crashpad_handler)(\.exe)?'
+
+  - id: videolan
+    display_name: VideoLAN
+    aliases:
+      - VideoLAN
+      - VideoLAN Team
+      - The VideoLAN Team
+    product_names:
+      - VLC media player
+      - VLC
+    internal_name_check: strict
+    almost_always_signed: true
+    signer_cn_substrings:
+      - videolan
+    copyright_tokens:
+      - videolan
+    product_patterns:
+      - '(?i)(vlc|vlc-cache-gen)(\.exe)?'
+      - '(?i)(libvlc|libvlccore|axvlc|npvlc)\.dll'
+      - '(?i)vlc\w*(\.exe|\.dll)?'
+
+  # --- Archivers / runtimes ------------------------------------------------
+
+  - id: rarlab
+    display_name: RARLAB
+    aliases:
+      - RARLAB
+      - "RARLAB (win.rar GmbH)"
+      - win.rar GmbH
+      - "win.rar"
+      - Alexander Roshal
+    product_names:
+      - WinRAR
+      - WinRAR archiver
+      - RAR
+    internal_name_check: strict
+    almost_always_signed: true
+    signer_cn_substrings:
+      - win.rar
+      - rarlab
+      - alexander roshal
+    copyright_tokens:
+      - alexander roshal
+      - rarlab
+      - "win.rar"
+    product_patterns:
+      - '(?i)(winrar|rar|unrar|rarextloader|uninstall)(\.exe|\.dll)?'
+      - '(?i)winrar( sfx)?'
+      - '(?i).*self[- ]extracting archive.*'
+
+  - id: python
+    display_name: Python Software Foundation
+    aliases:
+      - Python Software Foundation
+      - "Python Software Foundation."
+    product_names:
+      - Python
+    internal_name_check: strict
+    almost_always_signed: true
+    signer_cn_substrings:
+      - python software foundation
+    copyright_tokens:
+      - python software foundation
+    product_patterns:
+      - '(?i)(python|pythonw|py|pyw|pip|idle|venvlauncher|venvwlauncher)(\.exe)?'
+      - '(?i)(python\d*|vcruntime\d+|_?ctypes|select|unicodedata)\.(dll|pyd)'
+      - '(?i)python\w*(\.exe|\.dll)?'
+
+  # --- Security vendors ----------------------------------------------------
+  # Impersonating a security vendor is a well-worn way to look benign to a
+  # user glancing at Task Manager. All of these sign everything they ship.
+
+  - id: eset
+    display_name: ESET
+    aliases:
+      - ESET
+      - "ESET, spol. s r.o."
+      - "ESET, spol. s r. o."
+      - ESET spol. s r.o.
+      - ESET LLC
+    product_names:
+      - ESET Endpoint Antivirus
+      - ESET NOD32 Antivirus
+      - ESET Internet Security
+      - ESET Security
+    internal_name_check: lenient
+    almost_always_signed: true
+    signer_cn_substrings:
+      - eset
+    copyright_tokens:
+      - eset
+    product_patterns:
+      - '(?i)(ekrn|egui|eguiproxy|ecmd|ecmds|eeclnt|eplugin\w*)(\.exe)?'
+      - '(?i)eset\w*(\.exe|\.dll|\.sys)?'
+
+  - id: kaspersky
+    display_name: Kaspersky
+    aliases:
+      - Kaspersky
+      - Kaspersky Lab
+      - Kaspersky Lab JSC
+      - AO Kaspersky Lab
+    product_names:
+      - Kaspersky Anti-Virus
+      - Kaspersky Internet Security
+      - Kaspersky Endpoint Security
+      - Kaspersky Total Security
+    internal_name_check: lenient
+    almost_always_signed: true
+    signer_cn_substrings:
+      - kaspersky
+    copyright_tokens:
+      - kaspersky
+    product_patterns:
+      - '(?i)(avp|avpui|klnagent|ksde|ksdeui|kavfs\w*|kavremover)(\.exe)?'
+      - '(?i)(kl\w+|kaspersky\w*)(\.exe|\.dll|\.sys)?'
+
+  - id: malwarebytes
+    display_name: Malwarebytes
+    aliases:
+      - Malwarebytes
+      - Malwarebytes Inc.
+      - Malwarebytes Corporation
+      - Malwarebytes Ltd
+    product_names:
+      - Malwarebytes
+      - Malwarebytes Anti-Malware
+    internal_name_check: strict
+    almost_always_signed: true
+    signer_cn_substrings:
+      - malwarebytes
+    copyright_tokens:
+      - malwarebytes
+    product_patterns:
+      - '(?i)(mbam|mbamservice|mbamtray|mbsetup|mbamswissarmy|mbae\w*)(\.exe|\.sys)?'
+      - '(?i)malwarebytes\w*(\.exe|\.dll)?'
+
+  - id: avast
+    display_name: Avast
+    aliases:
+      - Avast
+      - Avast Software
+      - "Avast Software s.r.o."
+    product_names:
+      - Avast Antivirus
+      - Avast Free Antivirus
+      - Avast Premium Security
+    internal_name_check: lenient
+    almost_always_signed: true
+    signer_cn_substrings:
+      - avast software
+      - gen digital
+    copyright_tokens:
+      - avast
+    product_patterns:
+      - '(?i)(avastui|avastsvc|avastbrowser\w*|aswidsagent|aswidsagenta|aswengsrvnt)(\.exe)?'
+      - '(?i)(avast\w*|asw\w*)(\.exe|\.dll|\.sys)?'
+
+  - id: avg
+    display_name: AVG
+    aliases:
+      - AVG
+      - AVG Technologies
+      - "AVG Technologies CZ, s.r.o."
+      - "AVG Netherlands B.V."
+    product_names:
+      - AVG AntiVirus
+      - AVG Internet Security
+    internal_name_check: lenient
+    almost_always_signed: true
+    signer_cn_substrings:
+      - avg technologies
+      - avast software
+      - gen digital
+    copyright_tokens:
+      - avg
+    product_patterns:
+      - '(?i)(avgui|avgsvc|avgtoolsd|avgnt|avgcsrvx|avgidsagent)(\.exe)?'
+      - '(?i)avg\w*(\.exe|\.dll|\.sys)?'
+
+  - id: norton
+    display_name: Norton
+    aliases:
+      - Norton
+      - NortonLifeLock
+      - "NortonLifeLock Inc."
+      - Symantec
+      - Symantec Corporation
+    product_names:
+      - Norton 360
+      - Norton Security
+      - Norton AntiVirus
+      - Symantec Endpoint Protection
+    internal_name_check: lenient
+    almost_always_signed: true
+    signer_cn_substrings:
+      - nortonlifelock
+      - symantec
+      - gen digital
+      - norton
+    copyright_tokens:
+      - norton
+      - symantec
+    product_patterns:
+      - '(?i)(nortonsecurity|ns|nsservice|nswscsvc|navw32|ccsvchst|smc|smcgui)(\.exe)?'
+      - '(?i)(norton\w*|symantec\w*|sep\w*)(\.exe|\.dll|\.sys)?'
+
+  - id: mcafee
+    display_name: McAfee
+    aliases:
+      - McAfee
+      - "McAfee, LLC"
+      - "McAfee, Inc."
+      - McAfee LLC
+      - Network Associates
+    product_names:
+      - McAfee Total Protection
+      - McAfee LiveSafe
+      - McAfee VirusScan
+      - McAfee Endpoint Security
+    internal_name_check: lenient
+    almost_always_signed: true
+    signer_cn_substrings:
+      - mcafee
+      - network associates
+    copyright_tokens:
+      - mcafee
+      - network associates
+    product_patterns:
+      - '(?i)(mcshield|mcuicnt|mfemms|mfevtps|mcpvtray|mccspservicehost|masvc)(\.exe)?'
+      - '(?i)(mcafee\w*|mfe\w*|mc\w*)(\.exe|\.dll|\.sys)?'

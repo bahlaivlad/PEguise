@@ -1,0 +1,49 @@
+# PEguise project metadata and tool configuration.
+#
+# PEguise is run from a source checkout (`.venv/bin/python analyze.py ...`): the
+# reference data in data/ is located relative to the repository root, so an
+# installed copy of the `peguise` package needs `--data-dir` to find it.
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "peguise"
+description = "Static, offline detection of vendor impersonation via VERSIONINFO in Windows PE files"
+readme = "README.md"
+requires-python = ">=3.11"
+dynamic = ["version"]
+dependencies = [
+    "pefile>=2023.2.7",
+    # The signed_file.pe API that authenticode.py imports appeared in 0.9.0.
+    "signify>=0.9.0",
+    "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=7.0"]
+dev = ["pytest>=7.0", "ruff", "mypy", "types-PyYAML"]
+
+[tool.setuptools]
+packages = ["peguise"]
+
+[tool.setuptools.dynamic]
+version = {attr = "peguise.__version__"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+extend-exclude = [".venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "B", "UP", "SIM"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+files = ["peguise", "analyze.py"]
