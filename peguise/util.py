@@ -149,15 +149,19 @@ def best_match(value: str | None, candidates: list[str], *, threshold: float,
     # against "ATI Technologies" purely on the suffix, which is high enough to
     # misattribute the vendor. Comparing "avg" against "ati" gives 0.33, which
     # is the answer we actually want.
+    # The value is normalised and bounded once here; ratio() would otherwise
+    # re-normalise the full-length string for every candidate.
+    fuzzy_core = value_core[:_MAX_FUZZY_CHARS]
+    fuzzy_full = normalized_value[:_MAX_FUZZY_CHARS]
     best_candidate, best_score = None, 0.0
     for candidate in candidates:
         candidate_core = core_name(candidate)
         # Fall back to the full normalized form only when stripping suffixes
         # leaves nothing to compare (a name that is entirely generic words).
         if value_core and candidate_core:
-            score = ratio(value_core, candidate_core)
+            score = ratio(fuzzy_core, candidate_core)
         else:
-            score = ratio(value, candidate)
+            score = ratio(fuzzy_full, candidate)
         if score > best_score:
             best_candidate, best_score = candidate, score
 
