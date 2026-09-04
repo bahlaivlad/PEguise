@@ -18,3 +18,5 @@ tests/fixtures/
 *.rar
 # Personal Claude Code permissions; not shared.
 .claude/settings.local.json
+# Draft external reports with real certificate identifiers; kept local by decision.
+scratch_reports/
