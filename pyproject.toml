@@ -5,7 +5,7 @@
 # installed copy of the `peguise` package needs `--data-dir` to find it.
 
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -13,6 +13,8 @@ name = "peguise"
 description = "Static, offline detection of vendor impersonation via VERSIONINFO in Windows PE files"
 readme = "README.md"
 requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
 dynamic = ["version"]
 dependencies = [
     "pefile>=2023.2.7",

@@ -671,6 +671,10 @@ imports moved in 0.9, and an older release would silently disable every signatur
 strictly as an ASN.1/PKCS#7 parser; its chain-validation and timestamp-verification
 facilities are never invoked. `pytest` is needed only for the test harness.
 
+## License
+
+MIT. See [LICENSE](LICENSE).
+
 ## Scope
 
 PEguise performs static analysis of files at rest. It does not execute, unpack, emulate,
